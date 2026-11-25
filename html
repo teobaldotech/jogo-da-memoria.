@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
-  
+
   <style>
     :root {
       --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f766e 100%);
@@ -22,6 +22,7 @@
       --glass-border: rgba(255, 255, 255, 0.16);
       --text-main: #f8fafc;
       --text-muted: #cbd5e1;
+      --banner-safe-space: 72px;
     }
 
     * {
@@ -43,6 +44,22 @@
       justify-content: center;
       overflow-x: hidden;
       position: relative;
+      padding-bottom: var(--banner-safe-space);
+    }
+
+    /* ================= CANVAS DE CONFETES ================= */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 120;
+      display: none;
+    }
+
+    #confetti-canvas.active {
+      display: block;
     }
 
     /* ================= FUNDO DECORATIVO DA CAPA ================= */
@@ -141,7 +158,6 @@
       }
     }
 
-    /* Cartas ilustrativas no topo da capa */
     .cover-emblem {
       display: flex;
       justify-content: center;
@@ -202,7 +218,6 @@
       margin-bottom: 26px;
     }
 
-    /* Seletor de Dificuldade */
     .section-label {
       font-size: 0.85rem;
       text-transform: uppercase;
@@ -255,7 +270,6 @@
       color: var(--text-muted);
     }
 
-    /* Caixa de Recorde na Capa */
     .record-box {
       background: rgba(0, 0, 0, 0.28);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -270,7 +284,6 @@
       color: #fde047;
     }
 
-    /* Botão Principal JOGAR */
     .play-btn {
       width: 100%;
       padding: 16px 24px;
@@ -326,7 +339,7 @@
       padding: 12px 20px;
       border-radius: 20px;
       margin-bottom: 18px;
-      padding-right: 64px; /* espaço para o botão de som */
+      padding-right: 64px;
     }
 
     .header-left {
@@ -369,9 +382,10 @@
     .stats-bar {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       font-size: 1rem;
       font-weight: 600;
+      flex-wrap: wrap;
     }
 
     .stat-pill {
@@ -392,7 +406,6 @@
       margin: 0 auto;
     }
 
-    /* Ajustes de colunas por dificuldade */
     #game-board.diff-easy {
       max-width: 480px;
       grid-template-columns: repeat(4, 1fr);
@@ -428,7 +441,8 @@
       transform-style: preserve-3d;
     }
 
-    .card.flipped .card-inner {
+    .card.flipped .card-inner,
+    .card.peek .card-inner {
       transform: rotateY(180deg);
     }
 
@@ -481,29 +495,45 @@
     .game-footer {
       margin-top: 20px;
       display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 12px;
     }
 
-    .btn-reset {
-      padding: 12px 26px;
+    .btn-reset, .btn-hint {
+      padding: 12px 22px;
       font-family: 'Outfit', sans-serif;
       font-size: 1rem;
       font-weight: 700;
       border: none;
-      background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-      color: #ffffff;
       border-radius: 14px;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(13, 148, 136, 0.35);
-      transition: transform 0.2s, filter 0.2s;
+      transition: transform 0.2s, filter 0.2s, opacity 0.2s;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .btn-reset:hover {
+    .btn-reset {
+      background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+      color: #ffffff;
+      box-shadow: 0 6px 18px rgba(13, 148, 136, 0.35);
+    }
+
+    .btn-hint {
+      background: linear-gradient(135deg, #fde047 0%, #f59e0b 100%);
+      color: #0f172a;
+      box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-reset:hover, .btn-hint:hover:not(:disabled) {
       transform: translateY(-2px);
       filter: brightness(1.08);
+    }
+
+    .btn-hint:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
     /* ================= MODAL DE VITÓRIA ================= */
@@ -616,6 +646,29 @@
       color: #0f172a;
     }
 
+    /* ================= PLACEHOLDER DE BANNER WEB (PREVIEW) ================= */
+    .web-ad-slot {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 54px;
+      background: rgba(15, 23, 42, 0.9);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      letter-spacing: 0.8px;
+      color: #94a3b8;
+      z-index: 40;
+      backdrop-filter: blur(8px);
+    }
+
+    .web-ad-slot.hidden-native {
+      display: none;
+    }
+
     /* ================= RESPONSIVIDADE MOBILE ================= */
     @media (max-width: 640px) {
       .cover-title { font-size: 2rem; }
@@ -631,6 +684,9 @@
   </style>
 </head>
 <body>
+
+  <!-- Canvas de Confetes para Vitória -->
+  <canvas id="confetti-canvas"></canvas>
 
   <!-- Fundo com cartas flutuantes animadas -->
   <div class="floating-bg" id="floating-bg"></div>
@@ -696,6 +752,7 @@
     <div id="game-board"></div>
 
     <footer class="game-footer">
+      <button class="btn-hint" id="hint-btn">💡 Dica (2s)</button>
       <button class="btn-reset" id="reset-btn">🔄 Embaralhar Novamente</button>
     </footer>
   </section>
@@ -725,23 +782,23 @@
     </div>
   </div>
 
+  <!-- Indicador visual apenas quando rodando no navegador (oculto no AdMob nativo) -->
+  <div class="web-ad-slot" id="web-ad-placeholder">ADMOB BANNER ADAPTATIVO (CAPACITOR)</div>
+
   <script>
     // =========================================================================
-    // 1. BANCO DE ÍCONES: 46 originais + 23 novos = 69 ícones únicos
+    // 1. BANCO DE ÍCONES: 69 ícones únicos
     // =========================================================================
     const icons = [
-      // 46 originais
-      '🍎','🍌','🍒','🍇','🍉','🍋','🍓','🍍', 
+      '🍎','🍌','🍒','🍇','🍉','🍋','🍓','🍍',
       '🥝','🥑','🍑','🍆','🥕','🍄','🥦',
       '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼',
       '🦁','🐯','🐨','🐸','🐵','🐔','🐧','🐦','🦉','🐤',
       '🦄','🐴','🐗','🐺','🐝','🦋','🐌','🐞','🦂','🕷','🦀','🐙','🐠',
-      // 23 novos adicionados
       '🐬','🐳','🦈','🐊','🐢','🦎','🐍','🦖','🦕','🦩','🦚','🦜',
       '🌻','🌵','🌴','🍀','🍁','🌸','🍕','🍔','🍩','🍦','🚀'
     ];
 
-    // Configurações dos níveis de dificuldade
     const DIFFICULTIES = {
       easy:    { label: '🌱 Fácil',   pairs: 8,  className: 'diff-easy' },
       medium:  { label: '⚡ Médio',   pairs: 18, className: 'diff-medium' },
@@ -761,9 +818,114 @@
     let interval = null;
     let started = false;
     let soundEnabled = true;
+    let winsSinceInterstitial = 0;
 
     // =========================================================================
-    // 2. SISTEMA DE ÁUDIO SINTETIZADO (Web Audio API - sem arquivos externos)
+    // 2. INTEGRAÇÃO CAPACITOR ADMOB (Substitua pelos seus Ad Unit IDs reais)
+    // =========================================================================
+    const ADMOB_CONFIG = {
+      isTesting: true, // Mude para false em produção na Play Store
+      bannerAdId: 'ca-app-pub-3940256099942544/6300978111',
+      interstitialAdId: 'ca-app-pub-3940256099942544/1033173712',
+      rewardedAdId: 'ca-app-pub-3940256099942544/5224354917'
+    };
+
+    function getCapacitorAdMob() {
+      return window.Capacitor &&
+             window.Capacitor.Plugins &&
+             window.Capacitor.Plugins.AdMob
+        ? window.Capacitor.Plugins.AdMob
+        : null;
+    }
+
+    async function initAdMob() {
+      const AdMob = getCapacitorAdMob();
+      if (!AdMob) return;
+
+      document.getElementById('web-ad-placeholder').classList.add('hidden-native');
+
+      try {
+        await AdMob.initialize({
+          initializeForTesting: ADMOB_CONFIG.isTesting
+        });
+
+        await AdMob.showBanner({
+          adId: ADMOB_CONFIG.bannerAdId,
+          adSize: 'ADAPTIVE_BANNER',
+          position: 'BOTTOM_CENTER',
+          margin: 0,
+          isTesting: ADMOB_CONFIG.isTesting
+        });
+
+        await AdMob.prepareInterstitial({
+          adId: ADMOB_CONFIG.interstitialAdId,
+          isTesting: ADMOB_CONFIG.isTesting
+        });
+      } catch (err) {
+        console.warn('AdMob init/banner fallback:', err);
+      }
+    }
+
+    async function maybeShowInterstitial() {
+      winsSinceInterstitial++;
+      if (winsSinceInterstitial < 2) return;
+      winsSinceInterstitial = 0;
+
+      const AdMob = getCapacitorAdMob();
+      if (!AdMob) return;
+
+      try {
+        await AdMob.showInterstitial();
+        await AdMob.prepareInterstitial({
+          adId: ADMOB_CONFIG.interstitialAdId,
+          isTesting: ADMOB_CONFIG.isTesting
+        });
+      } catch (err) {
+        console.warn('Interstitial fallback:', err);
+      }
+    }
+
+    async function grantHintWithRewardedAd() {
+      if (lockBoard) return;
+      const hintBtn = document.getElementById('hint-btn');
+      hintBtn.disabled = true;
+
+      const AdMob = getCapacitorAdMob();
+      if (AdMob) {
+        try {
+          await AdMob.prepareRewardVideoAd({
+            adId: ADMOB_CONFIG.rewardedAdId,
+            isTesting: ADMOB_CONFIG.isTesting
+          });
+          const reward = await AdMob.showRewardVideoAd();
+          if (reward) {
+            revealUnmatchedCards(2000);
+          }
+        } catch (err) {
+          console.warn('Rewarded ad indisponível, aplicando dica direta:', err);
+          revealUnmatchedCards(2000);
+        }
+      } else {
+        // Ambiente Web / Preview: libera a dica diretamente
+        revealUnmatchedCards(2000);
+      }
+    }
+
+    function revealUnmatchedCards(durationMs = 2000) {
+      startTimer();
+      lockBoard = true;
+      const targets = cards.filter(c => !c.classList.contains('matched') && !c.classList.contains('flipped'));
+      targets.forEach(c => c.classList.add('peek'));
+
+      setTimeout(() => {
+        targets.forEach(c => c.classList.remove('peek'));
+        lockBoard = false;
+        document.getElementById('hint-btn').disabled = false;
+      }, durationMs);
+    }
+
+    // =========================================================================
+    // 3. SISTEMA DE ÁUDIO SINTETIZADO (Web Audio API)
     // =========================================================================
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
@@ -787,17 +949,15 @@
 
         osc.start(audioCtx.currentTime + delay);
         osc.stop(audioCtx.currentTime + delay + duration);
-      } catch (e) {
-        // Ignora bloqueios de áudio se houver
-      }
+      } catch (e) {}
     }
 
     const sfx = {
       click: () => playTone(520, 'sine', 0.08),
       flip:  () => playTone(380, 'triangle', 0.1),
       match: () => {
-        playTone(523.25, 'sine', 0.15, 0);    // Dó
-        playTone(659.25, 'sine', 0.22, 0.09); // Mi
+        playTone(523.25, 'sine', 0.15, 0);
+        playTone(659.25, 'sine', 0.22, 0.09);
       },
       wrong: () => playTone(220, 'sawtooth', 0.18, 0.05),
       win:   () => {
@@ -809,12 +969,64 @@
     };
 
     // =========================================================================
-    // 3. ANIMAÇÃO DE FUNDO DA CAPA
+    // 4. CONFETES NA VITÓRIA
+    // =========================================================================
+    function launchConfetti(durationMs = 2600) {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      canvas.classList.add('active');
+
+      const colors = ['#fde047', '#2dd4bf', '#f59e0b', '#86efac', '#60a5fa', '#f472b6'];
+      const pieces = Array.from({ length: 110 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * -canvas.height,
+        w: 6 + Math.random() * 8,
+        h: 10 + Math.random() * 10,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vy: 2.5 + Math.random() * 4,
+        vx: (Math.random() - 0.5) * 3,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.2
+      }));
+
+      let animId;
+      const startTime = performance.now();
+
+      function render(now) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vRot;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        });
+
+        if (now - startTime < durationMs) {
+          animId = requestAnimationFrame(render);
+        } else {
+          cancelAnimationFrame(animId);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          canvas.classList.remove('active');
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    }
+
+    // =========================================================================
+    // 5. ANIMAÇÃO DE FUNDO DA CAPA
     // =========================================================================
     function initFloatingBackground() {
       const container = document.getElementById('floating-bg');
       const sampleIcons = ['🍎', '🦊', '🚀', '🦄', '🍕', '🐳', '🌻', '🦁', '🍓', '🦖', '🦋', '🍩'];
-      
+
       for (let i = 0; i < 14; i++) {
         const el = document.createElement('div');
         el.className = 'floating-card';
@@ -827,7 +1039,7 @@
     }
 
     // =========================================================================
-    // 4. GERENCIAMENTO DE RECORDES (localStorage)
+    // 6. GERENCIAMENTO DE RECORDES (localStorage)
     // =========================================================================
     function getRecord(diff) {
       try {
@@ -840,9 +1052,8 @@
 
     function saveRecordIfBetter(diff, newTime, newMoves) {
       const current = getRecord(diff);
-      // Critério: menor número de jogadas; em caso de empate, menor tempo
-      const isBetter = !current || 
-                       newMoves < current.moves || 
+      const isBetter = !current ||
+                       newMoves < current.moves ||
                        (newMoves === current.moves && newTime < current.time);
 
       if (isBetter) {
@@ -868,7 +1079,7 @@
     }
 
     // =========================================================================
-    // 5. LÓGICA DE NAVEGAÇÃO ENTRE CAPA E JOGO
+    // 7. NAVEGAÇÃO ENTRE CAPA E JOGO
     // =========================================================================
     const coverScreen = document.getElementById('cover-screen');
     const gameScreen = document.getElementById('game-screen');
@@ -892,7 +1103,7 @@
     }
 
     // =========================================================================
-    // 6. LÓGICA PRINCIPAL DO TABULEIRO
+    // 8. LÓGICA PRINCIPAL DO TABULEIRO
     // =========================================================================
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -914,7 +1125,7 @@
       started = false;
       clearInterval(interval);
 
-      // Atualiza interface
+      document.getElementById('hint-btn').disabled = false;
       document.getElementById('moves').textContent = moves;
       document.getElementById('timer').textContent = timer;
       document.getElementById('pairs-found').textContent = 0;
@@ -925,7 +1136,6 @@
       board.className = config.className;
       board.innerHTML = '';
 
-      // Seleciona N pares únicos dentre os 69 ícones disponíveis
       const shuffledIcons = shuffle([...icons]);
       const selectedIcons = shuffledIcons.slice(0, config.pairs);
       const doubledIcons = shuffle([...selectedIcons, ...selectedIcons]);
@@ -986,7 +1196,6 @@
       document.getElementById('moves').textContent = moves;
 
       if (firstCard.dataset.icon === secondCard.dataset.icon) {
-        // Par encontrado!
         sfx.match();
         firstCard.classList.add('matched');
         secondCard.classList.add('matched');
@@ -994,20 +1203,20 @@
         document.getElementById('pairs-found').textContent = matchedPairs;
         resetTurn();
 
-        // Verifica vitória
         if (matchedPairs === DIFFICULTIES[currentDiff].pairs) {
           clearInterval(interval);
           const isNewRecord = saveRecordIfBetter(currentDiff, timer, moves);
           setTimeout(() => {
             sfx.win();
+            launchConfetti(2800);
             document.getElementById('final-time').textContent = `${timer}s`;
             document.getElementById('final-moves').textContent = moves;
             document.getElementById('new-record-badge').style.display = isNewRecord ? 'inline-block' : 'none';
             victoryModal.classList.add('show');
+            maybeShowInterstitial();
           }, 550);
         }
       } else {
-        // Errou o par
         sfx.wrong();
         setTimeout(() => {
           firstCard.classList.remove('flipped');
@@ -1023,9 +1232,8 @@
     }
 
     // =========================================================================
-    // 7. EVENTOS DE BOTÕES E INICIALIZAÇÃO
+    // 9. EVENTOS E INICIALIZAÇÃO
     // =========================================================================
-    // Seleção de dificuldade na capa
     document.querySelectorAll('.diff-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         sfx.click();
@@ -1036,23 +1244,18 @@
       });
     });
 
-    // Botão Jogar na Capa
     document.getElementById('start-game-btn').addEventListener('click', startGame);
-
-    // Botão Voltar para Capa
     document.getElementById('back-cover-btn').addEventListener('click', showCover);
+    document.getElementById('hint-btn').addEventListener('click', grantHintWithRewardedAd);
 
-    // Botão Reiniciar partida atual
     document.getElementById('reset-btn').addEventListener('click', () => {
       sfx.click();
       createBoard();
     });
 
-    // Botões do Modal de Vitória
     document.getElementById('modal-home-btn').addEventListener('click', showCover);
     document.getElementById('modal-again-btn').addEventListener('click', startGame);
 
-    // Botão de Som (Mutar / Desmutar)
     const soundBtn = document.getElementById('sound-btn');
     soundBtn.addEventListener('click', () => {
       soundEnabled = !soundEnabled;
@@ -1060,9 +1263,9 @@
       if (soundEnabled) sfx.click();
     });
 
-    // Inicializa elementos da capa ao carregar
     initFloatingBackground();
     updateCoverRecordDisplay();
+    initAdMob();
   </script>
 </body>
 </html>
