@@ -2,126 +2,898 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Jogo da Memória</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo da Memória - Edição Completa</title>
+  <!-- Fonte moderna do Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f766e 100%);
+      --card-front-bg: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+      --card-front-border: #2dd4bf;
+      --card-back-bg: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
+      --card-matched-bg: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --text-main: #f8fafc;
+      --text-muted: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #fafafa;
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin: 0;
-      padding: 20px;
-    }
-    h1 {
-      color: #333;
-    }
-    #stats {
-      margin-top: 10px;
-      font-size: 1.1em;
-      color: #444;
-    }
-    #game-board {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-      grid-gap: 10px;
-      margin-top: 20px;
       justify-content: center;
-      width: 100%;
-      max-width: 900px;
-    }
-    .card {
-      width: 100%;
-      padding-top: 100%; /* quadrado perfeito */
+      overflow-x: hidden;
       position: relative;
-      perspective: 800px;
-      cursor: pointer;
     }
-    .card-inner {
+
+    /* ================= FUNDO DECORATIVO DA CAPA ================= */
+    .floating-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .floating-card {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      transition: transform 0.6s;
-      transform-style: preserve-3d;
-    }
-    .card.flipped .card-inner {
-      transform: rotateY(180deg);
-    }
-    .card-front, .card-back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      border-radius: 10px;
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8em;
+      font-size: 2rem;
+      backdrop-filter: blur(4px);
+      animation: floatUp linear infinite;
+      opacity: 0;
     }
-    .card-front {
-      background: #4F8A8B;
-      color: #FFF;
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(110vh) rotate(0deg) scale(0.8);
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.45;
+      }
+      85% {
+        opacity: 0.45;
+      }
+      100% {
+        transform: translateY(-15vh) rotate(360deg) scale(1.1);
+        opacity: 0;
+      }
     }
-    .card-back {
-      background: #FBD46D;
-      color: #333;
+
+    /* ================= BOTÃO DE SOM FLUTUANTE ================= */
+    .sound-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 50;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      font-size: 1.3rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s, background 0.2s;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .sound-toggle:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: scale(1.08);
+    }
+
+    /* ================= TELA DE CAPA (INICIAL) ================= */
+    #cover-screen {
+      position: relative;
+      z-index: 10;
+      width: 92%;
+      max-width: 540px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      padding: 36px 28px;
+      text-align: center;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      animation: fadeScaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeScaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.92) translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    /* Cartas ilustrativas no topo da capa */
+    .cover-emblem {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .mini-card {
+      width: 54px;
+      height: 68px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.9rem;
+      font-weight: 800;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+    }
+
+    .mini-card:nth-child(1) {
+      background: var(--card-front-bg);
+      border: 2px solid var(--card-front-border);
+      transform: rotate(-12deg) translateY(4px);
+    }
+
+    .mini-card:nth-child(2) {
+      background: var(--card-back-bg);
+      color: #1e293b;
+      transform: translateY(-6px) scale(1.08);
+      z-index: 2;
+    }
+
+    .mini-card:nth-child(3) {
+      background: var(--card-matched-bg);
+      color: #064e3b;
+      transform: rotate(12deg) translateY(4px);
+    }
+
+    #cover-screen:hover .mini-card:nth-child(1) { transform: rotate(-16deg) translateY(0px); }
+    #cover-screen:hover .mini-card:nth-child(2) { transform: translateY(-10px) scale(1.12); }
+    #cover-screen:hover .mini-card:nth-child(3) { transform: rotate(16deg) translateY(0px); }
+
+    .cover-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(to right, #ffffff, #5eead4, #fde047);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .cover-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 26px;
+    }
+
+    /* Seletor de Dificuldade */
+    .section-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .difficulty-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .diff-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 14px 10px;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .diff-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .diff-btn.active {
+      background: rgba(20, 184, 166, 0.22);
+      border-color: #2dd4bf;
+      box-shadow: 0 0 20px rgba(45, 212, 191, 0.25);
+    }
+
+    .diff-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .diff-info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Caixa de Recorde na Capa */
+    .record-box {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 0.92rem;
+      color: #fde047;
+    }
+
+    /* Botão Principal JOGAR */
+    .play-btn {
+      width: 100%;
+      padding: 16px 24px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #0f172a;
+      background: linear-gradient(135deg, #fde047 0%, #f59e0b 100%);
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .play-btn:hover {
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 14px 30px rgba(245, 158, 11, 0.55);
+      filter: brightness(1.05);
+    }
+
+    .play-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* ================= TELA DO JOGO ================= */
+    #game-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1050px;
+      padding: 16px;
+      z-index: 10;
+      animation: fadeScaleIn 0.4s ease;
+    }
+
+    .game-header {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(12px);
+      padding: 12px 20px;
+      border-radius: 20px;
+      margin-bottom: 18px;
+      padding-right: 64px; /* espaço para o botão de som */
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-back {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateX(-2px);
+    }
+
+    .badge-diff {
+      background: rgba(45, 212, 191, 0.2);
+      border: 1px solid rgba(45, 212, 191, 0.4);
+      color: #5eead4;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .stat-pill {
+      background: rgba(0, 0, 0, 0.28);
+      padding: 6px 14px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Tabuleiro Responsivo */
+    #game-board {
+      display: grid;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+      margin: 0 auto;
+    }
+
+    /* Ajustes de colunas por dificuldade */
+    #game-board.diff-easy {
+      max-width: 480px;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    #game-board.diff-medium {
+      max-width: 660px;
+      grid-template-columns: repeat(6, 1fr);
+    }
+
+    #game-board.diff-hard {
+      max-width: 820px;
+      grid-template-columns: repeat(8, 1fr);
+    }
+
+    #game-board.diff-extreme {
+      max-width: 980px;
+      grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+    }
+
+    .card {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      perspective: 900px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-style: preserve-3d;
+    }
+
+    .card.flipped .card-inner {
       transform: rotateY(180deg);
     }
-    .matched .card-inner {
-      opacity: 0.5;
-      pointer-events: none;
+
+    .card-front, .card-back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
     }
-    #reset-btn {
+
+    .card-front {
+      background: var(--card-front-bg);
+      border: 2px solid rgba(45, 212, 191, 0.35);
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 1.5rem;
+      transition: filter 0.2s, transform 0.2s;
+    }
+
+    .card:hover:not(.flipped):not(.matched) .card-front {
+      filter: brightness(1.12);
+    }
+
+    .card-back {
+      background: var(--card-back-bg);
+      border: 2px solid #facc15;
+      color: #1e293b;
+      transform: rotateY(180deg);
+      font-size: clamp(1.3rem, 3vw, 2.2rem);
+    }
+
+    .card.matched .card-inner {
+      animation: matchPulse 0.5s ease forwards;
+    }
+
+    .card.matched .card-back {
+      background: var(--card-matched-bg);
+      border-color: #4ade80;
+    }
+
+    @keyframes matchPulse {
+      0% { transform: rotateY(180deg) scale(1); }
+      50% { transform: rotateY(180deg) scale(1.12); }
+      100% { transform: rotateY(180deg) scale(0.96); opacity: 0.72; }
+    }
+
+    .game-footer {
       margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 1em;
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-reset {
+      padding: 12px 26px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
       border: none;
-      background: #1E6262;
-      color: #FFF;
-      border-radius: 5px;
+      background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+      color: #ffffff;
+      border-radius: 14px;
       cursor: pointer;
-      transition: background 0.2s;
+      box-shadow: 0 6px 18px rgba(13, 148, 136, 0.35);
+      transition: transform 0.2s, filter 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    #reset-btn:hover {
-      background: #163232;
+
+    .btn-reset:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
     }
-    /* Mobile */
-    @media (max-width: 600px) {
-      .card-front, .card-back {
-        font-size: 1.2em;
-      }
+
+    /* ================= MODAL DE VITÓRIA ================= */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+      animation: fadeScaleIn 0.35s ease;
+    }
+
+    .modal-card {
+      background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid #2dd4bf;
+      border-radius: 26px;
+      padding: 32px 24px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-trophy {
+      font-size: 4rem;
+      margin-bottom: 10px;
+      animation: bounceTrophy 1s infinite alternate;
+    }
+
+    @keyframes bounceTrophy {
+      from { transform: translateY(0); }
+      to { transform: translateY(-8px); }
+    }
+
+    .modal-title {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: #fde047;
+      margin-bottom: 6px;
+    }
+
+    .modal-new-record {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid #f59e0b;
+      color: #fbbf24;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+
+    .modal-stats {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 22px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .modal-stat-item span {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .modal-stat-item strong {
+      font-size: 1.4rem;
+      color: #ffffff;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 13px;
+      border-radius: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s;
+    }
+
+    .modal-actions button:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-modal-home {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    .btn-modal-again {
+      background: linear-gradient(135deg, #fde047 0%, #f59e0b 100%);
+      color: #0f172a;
+    }
+
+    /* ================= RESPONSIVIDADE MOBILE ================= */
+    @media (max-width: 640px) {
+      .cover-title { font-size: 2rem; }
+      #game-board { gap: 6px; }
+      #game-board.diff-hard { grid-template-columns: repeat(6, 1fr); }
+      #game-board.diff-extreme { grid-template-columns: repeat(auto-fit, minmax(46px, 1fr)); }
+      .card-front, .card-back { border-radius: 9px; }
+      .card-front { font-size: 1.1rem; }
+      .game-header { padding: 10px 14px; padding-right: 58px; }
+      .stats-bar { gap: 8px; font-size: 0.88rem; }
+      .stat-pill { padding: 5px 10px; }
     }
   </style>
 </head>
 <body>
-  <h1>Jogo da Memória</h1>
-  <div id="stats">
-    ⏱️ Tempo: <span id="timer">0</span>s | 🌀 Jogadas: <span id="moves">0</span>
+
+  <!-- Fundo com cartas flutuantes animadas -->
+  <div class="floating-bg" id="floating-bg"></div>
+
+  <!-- Botão Global de Som -->
+  <button class="sound-toggle" id="sound-btn" title="Ativar/Desativar Som" aria-label="Alternar Som">🔊</button>
+
+  <!-- ==================== TELA 1: CAPA INICIAL ==================== -->
+  <main id="cover-screen">
+    <div class="cover-emblem">
+      <div class="mini-card">❓</div>
+      <div class="mini-card">🦊</div>
+      <div class="mini-card">🍎</div>
+    </div>
+
+    <h1 class="cover-title">Jogo da Memória</h1>
+    <p class="cover-subtitle">Treine sua mente encontrando todos os pares escondidos!</p>
+
+    <span class="section-label">Escolha o Nível de Desafio</span>
+    <div class="difficulty-grid" id="difficulty-selector">
+      <button class="diff-btn" data-diff="easy">
+        <span class="diff-name">🌱 Fácil</span>
+        <span class="diff-info">8 pares • 16 cartas</span>
+      </button>
+      <button class="diff-btn active" data-diff="medium">
+        <span class="diff-name">⚡ Médio</span>
+        <span class="diff-info">18 pares • 36 cartas</span>
+      </button>
+      <button class="diff-btn" data-diff="hard">
+        <span class="diff-name">🔥 Difícil</span>
+        <span class="diff-info">32 pares • 64 cartas</span>
+      </button>
+      <button class="diff-btn" data-diff="extreme">
+        <span class="diff-name">👑 Extremo</span>
+        <span class="diff-info">46 pares • 92 cartas</span>
+      </button>
+    </div>
+
+    <div class="record-box" id="cover-record">
+      🏆 Melhor Recorde: <span id="best-record-text">Nenhum ainda</span>
+    </div>
+
+    <button class="play-btn" id="start-game-btn">
+      <span>▶</span> JOGAR AGORA
+    </button>
+  </main>
+
+  <!-- ==================== TELA 2: TABULEIRO DO JOGO ==================== -->
+  <section id="game-screen">
+    <header class="game-header">
+      <div class="header-left">
+        <button class="btn-back" id="back-cover-btn">⬅ Capa</button>
+        <span class="badge-diff" id="current-diff-badge">⚡ Médio</span>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-pill">⏱️ <span id="timer">0</span>s</div>
+        <div class="stat-pill">🌀 <span id="moves">0</span></div>
+        <div class="stat-pill">✨ <span id="pairs-found">0</span>/<span id="pairs-total">18</span></div>
+      </div>
+    </header>
+
+    <div id="game-board"></div>
+
+    <footer class="game-footer">
+      <button class="btn-reset" id="reset-btn">🔄 Embaralhar Novamente</button>
+    </footer>
+  </section>
+
+  <!-- ==================== MODAL DE VITÓRIA ==================== -->
+  <div class="modal-overlay" id="victory-modal">
+    <div class="modal-card">
+      <div class="modal-trophy">🏆</div>
+      <h2 class="modal-title">Parabéns, Você Venceu!</h2>
+      <div class="modal-new-record" id="new-record-badge" style="display: none;">🌟 NOVO RECORDE!</div>
+
+      <div class="modal-stats">
+        <div class="modal-stat-item">
+          <span>Tempo Total</span>
+          <strong id="final-time">0s</strong>
+        </div>
+        <div class="modal-stat-item">
+          <span>Jogadas</span>
+          <strong id="final-moves">0</strong>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-modal-home" id="modal-home-btn">🏠 Capa</button>
+        <button class="btn-modal-again" id="modal-again-btn">🔄 Jogar de Novo</button>
+      </div>
+    </div>
   </div>
-  <div id="game-board"></div>
-  <button id="reset-btn">Reiniciar</button>
 
   <script>
-    // 46 ícones originais + 23 novos = 69 únicos
+    // =========================================================================
+    // 1. BANCO DE ÍCONES: 46 originais + 23 novos = 69 ícones únicos
+    // =========================================================================
     const icons = [
+      // 46 originais
       '🍎','🍌','🍒','🍇','🍉','🍋','🍓','🍍', 
       '🥝','🥑','🍑','🍆','🥕','🍄','🥦',
       '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼',
       '🦁','🐯','🐨','🐸','🐵','🐔','🐧','🐦','🦉','🐤',
-      '🦄','🐴','🐗','🐺','🐝','🦋','🐌','🐞','🦂','🕷','🦀','🐙','🐠'
+      '🦄','🐴','🐗','🐺','🐝','🦋','🐌','🐞','🦂','🕷','🦀','🐙','🐠',
+      // 23 novos adicionados
+      '🐬','🐳','🦈','🐊','🐢','🦎','🐍','🦖','🦕','🦩','🦚','🦜',
+      '🌻','🌵','🌴','🍀','🍁','🌸','🍕','🍔','🍩','🍦','🚀'
     ];
 
+    // Configurações dos níveis de dificuldade
+    const DIFFICULTIES = {
+      easy:    { label: '🌱 Fácil',   pairs: 8,  className: 'diff-easy' },
+      medium:  { label: '⚡ Médio',   pairs: 18, className: 'diff-medium' },
+      hard:    { label: '🔥 Difícil', pairs: 32, className: 'diff-hard' },
+      extreme: { label: '👑 Extremo', pairs: 46, className: 'diff-extreme' }
+    };
+
+    // Estado Global do Jogo
+    let currentDiff = 'medium';
     let cards = [];
     let firstCard = null;
     let secondCard = null;
     let lockBoard = false;
     let moves = 0;
+    let matchedPairs = 0;
     let timer = 0;
     let interval = null;
     let started = false;
+    let soundEnabled = true;
 
+    // =========================================================================
+    // 2. SISTEMA DE ÁUDIO SINTETIZADO (Web Audio API - sem arquivos externos)
+    // =========================================================================
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playTone(freq, type = 'sine', duration = 0.15, delay = 0) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + duration);
+      } catch (e) {
+        // Ignora bloqueios de áudio se houver
+      }
+    }
+
+    const sfx = {
+      click: () => playTone(520, 'sine', 0.08),
+      flip:  () => playTone(380, 'triangle', 0.1),
+      match: () => {
+        playTone(523.25, 'sine', 0.15, 0);    // Dó
+        playTone(659.25, 'sine', 0.22, 0.09); // Mi
+      },
+      wrong: () => playTone(220, 'sawtooth', 0.18, 0.05),
+      win:   () => {
+        playTone(523.25, 'triangle', 0.18, 0);
+        playTone(659.25, 'triangle', 0.18, 0.12);
+        playTone(783.99, 'triangle', 0.18, 0.24);
+        playTone(1046.50, 'triangle', 0.4, 0.36);
+      }
+    };
+
+    // =========================================================================
+    // 3. ANIMAÇÃO DE FUNDO DA CAPA
+    // =========================================================================
+    function initFloatingBackground() {
+      const container = document.getElementById('floating-bg');
+      const sampleIcons = ['🍎', '🦊', '🚀', '🦄', '🍕', '🐳', '🌻', '🦁', '🍓', '🦖', '🦋', '🍩'];
+      
+      for (let i = 0; i < 14; i++) {
+        const el = document.createElement('div');
+        el.className = 'floating-card';
+        el.textContent = sampleIcons[i % sampleIcons.length];
+        el.style.left = `${Math.random() * 94}%`;
+        el.style.animationDuration = `${12 + Math.random() * 14}s`;
+        el.style.animationDelay = `${-Math.random() * 20}s`;
+        container.appendChild(el);
+      }
+    }
+
+    // =========================================================================
+    // 4. GERENCIAMENTO DE RECORDES (localStorage)
+    // =========================================================================
+    function getRecord(diff) {
+      try {
+        const raw = localStorage.getItem(`memory_record_${diff}`);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveRecordIfBetter(diff, newTime, newMoves) {
+      const current = getRecord(diff);
+      // Critério: menor número de jogadas; em caso de empate, menor tempo
+      const isBetter = !current || 
+                       newMoves < current.moves || 
+                       (newMoves === current.moves && newTime < current.time);
+
+      if (isBetter) {
+        try {
+          localStorage.setItem(`memory_record_${diff}`, JSON.stringify({
+            time: newTime,
+            moves: newMoves
+          }));
+        } catch {}
+        return true;
+      }
+      return false;
+    }
+
+    function updateCoverRecordDisplay() {
+      const rec = getRecord(currentDiff);
+      const textEl = document.getElementById('best-record-text');
+      if (rec) {
+        textEl.textContent = `${rec.moves} jogadas em ${rec.time}s`;
+      } else {
+        textEl.textContent = 'Nenhum recorde ainda — seja o primeiro!';
+      }
+    }
+
+    // =========================================================================
+    // 5. LÓGICA DE NAVEGAÇÃO ENTRE CAPA E JOGO
+    // =========================================================================
+    const coverScreen = document.getElementById('cover-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const victoryModal = document.getElementById('victory-modal');
+
+    function showCover() {
+      sfx.click();
+      clearInterval(interval);
+      victoryModal.classList.remove('show');
+      gameScreen.style.display = 'none';
+      coverScreen.style.display = 'block';
+      updateCoverRecordDisplay();
+    }
+
+    function startGame() {
+      sfx.click();
+      coverScreen.style.display = 'none';
+      victoryModal.classList.remove('show');
+      gameScreen.style.display = 'flex';
+      createBoard();
+    }
+
+    // =========================================================================
+    // 6. LÓGICA PRINCIPAL DO TABULEIRO
+    // =========================================================================
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -131,23 +903,31 @@
     }
 
     function createBoard() {
+      const config = DIFFICULTIES[currentDiff];
       cards = [];
       firstCard = null;
       secondCard = null;
       lockBoard = false;
       moves = 0;
+      matchedPairs = 0;
       timer = 0;
       started = false;
       clearInterval(interval);
+
+      // Atualiza interface
       document.getElementById('moves').textContent = moves;
       document.getElementById('timer').textContent = timer;
+      document.getElementById('pairs-found').textContent = 0;
+      document.getElementById('pairs-total').textContent = config.pairs;
+      document.getElementById('current-diff-badge').textContent = config.label;
 
       const board = document.getElementById('game-board');
+      board.className = config.className;
       board.innerHTML = '';
 
-      // Seleciona 46 ícones aleatórios para ter 46 pares (92 cartas)
+      // Seleciona N pares únicos dentre os 69 ícones disponíveis
       const shuffledIcons = shuffle([...icons]);
-      const selectedIcons = shuffledIcons.slice(0, 46);
+      const selectedIcons = shuffledIcons.slice(0, config.pairs);
       const doubledIcons = shuffle([...selectedIcons, ...selectedIcons]);
 
       doubledIcons.forEach((icon, i) => {
@@ -192,6 +972,7 @@
       if (this.classList.contains('flipped') || this.classList.contains('matched')) return;
 
       startTimer();
+      sfx.flip();
       this.classList.add('flipped');
 
       if (!firstCard) {
@@ -205,22 +986,34 @@
       document.getElementById('moves').textContent = moves;
 
       if (firstCard.dataset.icon === secondCard.dataset.icon) {
+        // Par encontrado!
+        sfx.match();
         firstCard.classList.add('matched');
         secondCard.classList.add('matched');
+        matchedPairs++;
+        document.getElementById('pairs-found').textContent = matchedPairs;
         resetTurn();
 
-        if (document.querySelectorAll('.card.matched').length === cards.length) {
+        // Verifica vitória
+        if (matchedPairs === DIFFICULTIES[currentDiff].pairs) {
           clearInterval(interval);
+          const isNewRecord = saveRecordIfBetter(currentDiff, timer, moves);
           setTimeout(() => {
-            alert(`🎉 Parabéns, você venceu!\n\n⏱️ Tempo: ${timer}s\n🌀 Jogadas: ${moves}`);
-          }, 500);
+            sfx.win();
+            document.getElementById('final-time').textContent = `${timer}s`;
+            document.getElementById('final-moves').textContent = moves;
+            document.getElementById('new-record-badge').style.display = isNewRecord ? 'inline-block' : 'none';
+            victoryModal.classList.add('show');
+          }, 550);
         }
       } else {
+        // Errou o par
+        sfx.wrong();
         setTimeout(() => {
           firstCard.classList.remove('flipped');
           secondCard.classList.remove('flipped');
           resetTurn();
-        }, 1000);
+        }, 850);
       }
     }
 
@@ -229,9 +1022,47 @@
       lockBoard = false;
     }
 
-    document.getElementById('reset-btn').onclick = createBoard;
+    // =========================================================================
+    // 7. EVENTOS DE BOTÕES E INICIALIZAÇÃO
+    // =========================================================================
+    // Seleção de dificuldade na capa
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sfx.click();
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentDiff = btn.dataset.diff;
+        updateCoverRecordDisplay();
+      });
+    });
 
-    createBoard();
+    // Botão Jogar na Capa
+    document.getElementById('start-game-btn').addEventListener('click', startGame);
+
+    // Botão Voltar para Capa
+    document.getElementById('back-cover-btn').addEventListener('click', showCover);
+
+    // Botão Reiniciar partida atual
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      sfx.click();
+      createBoard();
+    });
+
+    // Botões do Modal de Vitória
+    document.getElementById('modal-home-btn').addEventListener('click', showCover);
+    document.getElementById('modal-again-btn').addEventListener('click', startGame);
+
+    // Botão de Som (Mutar / Desmutar)
+    const soundBtn = document.getElementById('sound-btn');
+    soundBtn.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
+      if (soundEnabled) sfx.click();
+    });
+
+    // Inicializa elementos da capa ao carregar
+    initFloatingBackground();
+    updateCoverRecordDisplay();
   </script>
 </body>
 </html>
